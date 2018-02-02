@@ -20,7 +20,7 @@
  * The Apps Script CLI
  */
 const anymatch = require('anymatch');
-const connect = require('connect');
+const connect = require('connect'); // UNUSED VAR ?
 const del = require('del');
 const dotf = require('dotf');
 const findParentDir = require('find-parent-dir');
@@ -44,7 +44,7 @@ const readline = require('readline');
 require('http-shutdown').extend();
 
 // Debug
-const DEBUG = false;
+const DEBUG = false; // UNUSED VAR ?
 
 // Names / Paths
 const PROJECT_NAME = 'clasp';
@@ -67,7 +67,7 @@ const DOT = {
     DIR: '~',
     NAME: `${PROJECT_NAME}rc.json`,
     PATH: `~/.${PROJECT_NAME}rc.json`,
-    ABSOLUTE_PATH: path.join(os.homedir(), `.${PROJECT_NAME}rc.json`)
+    ABSOLUTE_PATH: path.join(os.homedir(), `.${PROJECT_NAME}rc.json`),
   },
 };
 
@@ -83,7 +83,7 @@ const DOTFILE = {
     return new Promise((res, rej) => {
       if (fs.existsSync(path)) {
         let buffer = read.sync(DOT.IGNORE.PATH, 'utf8');
-        res(splitLines(buffer).filter(name => name));
+        res(splitLines(buffer).filter((name) => name));
       } else {
         res([]);
       }
@@ -112,7 +112,7 @@ const oauth2Client = new OAuth2(
 );
 const script = google.script({
   version: 'v1',
-  auth: oauth2Client
+  auth: oauth2Client,
 });
 
 // Log messages (some logs take required params)
@@ -141,7 +141,7 @@ const LOG = {
   UNTITLED_SCRIPT_TITLE: 'Untitled Script',
   VERSION_CREATE: 'Creating a new version...',
   VERSION_CREATED: (versionNumber) => `Created version ${versionNumber}.`,
-  VERSION_DESCRIPTION: ({ versionNumber, description }) => `${versionNumber} - ${description || '(no description)'}`,
+  VERSION_DESCRIPTION: ({versionNumber, description}) => `${versionNumber} - ${description || '(no description)'}`,
   VERSION_NUM: (numVersions) => `~ ${numVersions} ${pluralize('Version', numVersions)} ~`,
 };
 
@@ -231,7 +231,7 @@ function getProjectSettings() {
     } else {
       fail(); // Never found a dotfile
     }
-  }).catch(err => {
+  }).catch((err) => {
     spinner.stop(true);
   });
 }
@@ -265,20 +265,20 @@ function getAPICredentials(cb) {
       'https://www.googleapis.com/auth/script.projects',
     ],
     code_challenge_method: 'S256',
-    code_challenge: codes.codeChallenge
+    code_challenge: codes.codeChallenge,
   };
 
   let authCode = useLocalhost ?
     authorizeWithLocalhost(opts) :
     authorizeWithoutLocalhost(opts);
 
-  authCode.then(code => oauth2Client.getToken({
+  authCode.then((code) => oauth2Client.getToken({
     code,
-    codeVerifier: codes.codeVerifier
+    codeVerifier: codes.codeVerifier,
   }))
-  .then(response => DOTFILE.RC.write(response.tokens))
+  .then((response) => DOTFILE.RC.write(response.tokens))
   .then(() => console.log(LOG.AUTH_SUCCESSFUL))
-  .catch(err => console.error(ERROR.ACCESS_TOKEN + err));
+  .catch((err) => console.error(ERROR.ACCESS_TOKEN + err));
 }
 
 /**
@@ -292,7 +292,7 @@ function authorizeWithLocalhost(opts) {
   return new Promise((res, rej) => {
     let server = http.createServer(function(req, resp) {
       let urlParts = url.parse(req.url, true);
-      let code = urlParts.query.code;
+      let code = urlParts.query.code; // UNUSED VAR ?
       if (urlParts.query.code) {
         res(urlParts.query.code);
       } else {
@@ -319,7 +319,6 @@ function authorizeWithLocalhost(opts) {
  * @param {Object} opts OAuth2 options
  * @return {Promise} Promise resolving with the authorization code
  */
-
 function authorizeWithoutLocalhost(opts) {
   oauth2Client.redirectUri = REDIRECT_URI_OOB;
   let authUrl = oauth2Client.generateAuthUrl(opts);
@@ -328,13 +327,13 @@ function authorizeWithoutLocalhost(opts) {
   return new Promise((res, rej) => {
     let rl = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
     });
     rl.question(LOG.AUTH_CODE, (code) => {
       if (code && code.length) {
         res(code);
       } else {
-        rej("No authorization code entered.");
+        rej('No authorization code entered.');
       }
       rl.close();
     });
@@ -349,7 +348,7 @@ function authorizeWithoutLocalhost(opts) {
 function getFileType(type) {
   return {
     SERVER_JS: 'js',
-    SHARED_JS: 'js'
+    SHARED_JS: 'js',
   }[type] || type.toLowerCase();
 }
 
@@ -364,7 +363,7 @@ function getAPIFileType(path) {
     GS: 'SERVER_JS',
     JS: 'SERVER_JS',
     HTML: 'HTML',
-    JSON: 'JSON'
+    JSON: 'JSON',
   }[extension];
 }
 
@@ -373,7 +372,7 @@ function getAPIFileType(path) {
  * @param  {string} scriptId The script ID
  */
 function saveProjectId(scriptId) {
-  DOTFILE.PROJECT().write({ scriptId }); // Save the script id
+  DOTFILE.PROJECT().write({scriptId}); // Save the script id
 }
 
 /**
@@ -406,7 +405,7 @@ program
       console.warn(ERROR.LOGGED_IN);
     }).catch((err) => {
       authorize(cmd.localhost);
-    })
+    });
   });
 
 /**
@@ -416,7 +415,7 @@ program
   .command('logout')
   .description('Log out')
   .action(() => {
-    del(DOT.RC.ABSOLUTE_PATH, { force: true }); // del doesn't work with a relative path (~)
+    del(DOT.RC.ABSOLUTE_PATH, {force: true}); // del doesn't work with a relative path (~)
   });
 
 /**
@@ -439,14 +438,14 @@ program
       getAPICredentials(() => {
         spinner.setSpinnerTitle(LOG.CREATE_PROJECT_START(title));
         spinner.start();
-        script.projects.create({ title, parentId }, {}, (error, { data }) => {
+        script.projects.create({title, parentId}, {}, (error, {data}) => {
           spinner.stop(true);
           if (error) {
             logError(error, ERROR.CREATE);
           } else {
             let scriptId = data.scriptId;
             console.log(LOG.CREATE_PROJECT_FINISH(scriptId));
-            saveProjectId(scriptId)
+            saveProjectId(scriptId);
             if (!manifestExists()) {
               fetchProject(scriptId); // fetches appsscript.json, o.w. `push` breaks
             }
@@ -467,7 +466,7 @@ function fetchProject(scriptId, rootDir) {
   getAPICredentials(() => {
     script.projects.getContent({
       scriptId,
-    }, {}, (error, { data }) => {
+    }, {}, (error, {data}) => {
       spinner.stop(true);
       if (error) {
         if (error.statusCode === 404) {
@@ -507,7 +506,7 @@ program
   .description('Clone a project')
   .action((scriptId) => {
     spinner.setSpinnerTitle(LOG.CLONING);
-    saveProjectId(scriptId)
+    saveProjectId(scriptId);
     fetchProject(scriptId);
   });
 
@@ -518,7 +517,7 @@ program
   .command('pull')
   .description('Fetch a remote project')
   .action(() => {
-    getProjectSettings().then(({ scriptId, rootDir }) => {
+    getProjectSettings().then(({scriptId, rootDir}) => {
       if (scriptId) {
         spinner.setSpinnerTitle(LOG.PULLING);
         fetchProject(scriptId, rootDir);
@@ -540,7 +539,7 @@ program
     spinner.setSpinnerTitle(LOG.PUSHING);
     spinner.start();
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId, rootDir }) => {
+      getProjectSettings().then(({scriptId, rootDir}) => {
         if (!scriptId) return;
         // Read all filenames as a flattened tree
         recursive(rootDir || './', (err, filePaths) => {
@@ -565,13 +564,13 @@ program
                     rootDir.length + 1,
                     nameWithoutExt.length
                   );
-                };
+                }
                 if (getAPIFileType(name) && !anymatch(ignorePatterns, name)) {
                   nonIgnoredFilePaths.push(name);
                   return {
                     name: formattedName, // the API separates the extension
                     type: getAPIFileType(name), // the file
-                    source: contents[i]
+                    source: contents[i],
                   };
                 } else {
                   return; // Skip ignored files
@@ -580,18 +579,18 @@ program
 
               script.projects.updateContent({
                 scriptId,
-                resource: { files }
+                resource: {files},
               }, {}, (error, res) => {
                 spinner.stop(true);
                 if (error) {
                   console.error(LOG.PUSH_FAILURE);
-                  error.errors.map(err => {
+                  error.errors.map((err) => {
                     console.error(err.message);
                   });
                 } else {
                   nonIgnoredFilePaths.map((filePath) => {
                     console.log(`└─ ${filePath}`);
-                  })
+                  });
                   console.log(LOG.PUSH_SUCCESS(nonIgnoredFilePaths.length));
                 }
               });
@@ -609,7 +608,7 @@ program
   .command('open')
   .description('Open a script')
   .action((scriptId) => {
-    getProjectSettings().then(({ scriptId }) => {
+    getProjectSettings().then(({scriptId}) => {
       if (scriptId) {
         console.log(LOG.OPEN_PROJECT(scriptId));
         if (scriptId.length < 30) {
@@ -629,26 +628,32 @@ program
   .description('List deployment ids of a script')
   .action(() => {
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId }) => {
+      getProjectSettings().then(({scriptId}) => {
         if (!scriptId) return;
         spinner.setSpinnerTitle(LOG.DEPLOYMENT_LIST(scriptId));
         spinner.start();
 
         script.projects.deployments.list({
-          scriptId
-        }, {}, (error, { deployments }) => {
+          scriptId,
+        },
+        {},
+        (error, {deployments}) => {
           spinner.stop(true);
           if (error) {
             logError(error);
           } else {
             let numDeployments = deployments.length;
             let deploymentWord = pluralize('Deployment', numDeployments);
+
             console.log(`${numDeployments} ${deploymentWord}.`);
-            deployments.map(({ deploymentId, deploymentConfig }) => {
+
+            deployments.map(({deploymentId, deploymentConfig}) => {
               let versionString = !!deploymentConfig.versionNumber ?
                 `@${deploymentConfig.versionNumber}` : '@HEAD';
+
               let description = deploymentConfig.description ?
                 '- ' + deploymentConfig.description : '';
+
               console.log(`- ${deploymentId} ${versionString} ${description}`);
             });
           }
@@ -667,11 +672,15 @@ program
   .action((version, description) => {
     description = description || '';
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId }) => {
+      getProjectSettings().then(({scriptId}) => {
         if (!scriptId) return;
         spinner.setSpinnerTitle(LOG.DEPLOYMENT_START(scriptId));
         spinner.start();
 
+        /**
+         *
+         * @param {*} versionNumber
+         */
         function createDeployment(versionNumber) {
           spinner.setSpinnerTitle(LOG.DEPLOYMENT_CREATE);
           script.projects.deployments.create({
@@ -680,28 +689,28 @@ program
               versionNumber,
               manifestFileName: PROJECT_MANIFEST_BASENAME,
               description,
-            }
-          }, {}, (err, { data }) => {
+            },
+          }, {}, (err, {data}) => {
             spinner.stop(true);
             if (err) {
               console.error(ERROR.DEPLOYMENT_COUNT);
             } else {
-              console.log(`- ${data.deploymentId} @${versionNumber}.`)
+              console.log(`- ${data.deploymentId} @${versionNumber}.`);
             }
           });
         }
 
         // If the version is specified, update that deployment
         let versionRequestBody = {
-          description
+          description,
         };
         if (version) {
           createDeployment(+version);
         } else { // if no version, create a new version and deploy that
           script.projects.versions.create({
             scriptId,
-            resource: versionRequestBody
-          }, {}, (err, { data }) => {
+            resource: versionRequestBody,
+          }, {}, (err, {data}) => {
             spinner.stop(true);
             if (err) {
               logError(null, ERROR.ONE_DEPLOYMENT_CREATE);
@@ -724,7 +733,7 @@ program
   .description('Undeploy a deployment of a project')
   .action((deploymentId) => {
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId }) => {
+      getProjectSettings().then(({scriptId}) => {
         if (!scriptId) return;
         spinner.setSpinnerTitle(LOG.UNDEPLOYMENT_START(deploymentId));
         spinner.start();
@@ -737,7 +746,7 @@ program
           if (err) {
             logError(null, ERROR.READ_ONLY_DELETE);
           } else {
-            console.log(LOG.UNDEPLOYMENT_FINISH(deploymentId))
+            console.log(LOG.UNDEPLOYMENT_FINISH(deploymentId));
           }
         });
       });
@@ -752,7 +761,7 @@ program
   .description(`Update a deployment`)
   .action((deploymentId, version, description) => {
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId }) => {
+      getProjectSettings().then(({scriptId}) => {
         script.projects.deployments.update({
           scriptId,
           deploymentId,
@@ -760,9 +769,9 @@ program
             deploymentConfig: {
               versionNumber: version,
               manifestFileName: PROJECT_MANIFEST_BASENAME,
-              description
-            }
-          }
+              description,
+            },
+          },
         }, {}, (error, res) => {
           spinner.stop(true);
           if (error) {
@@ -785,10 +794,10 @@ program
     spinner.setSpinnerTitle('Grabbing versions...');
     spinner.start();
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId }) => {
+      getProjectSettings().then(({scriptId}) => {
         script.projects.versions.list({
           scriptId,
-        }, {}, (error, { data }) => {
+        }, {}, (error, {data}) => {
           spinner.stop(true);
           if (error) {
             logError(error);
@@ -818,11 +827,11 @@ program
     spinner.setSpinnerTitle(LOG.VERSION_CREATE);
     spinner.start();
     getAPICredentials(() => {
-      getProjectSettings().then(({ scriptId }) => {
+      getProjectSettings().then(({scriptId}) => {
         script.projects.versions.create({
           scriptId,
           description,
-        }, {}, (error, { data }) => {
+        }, {}, (error, {data}) => {
           spinner.stop(true);
           if (error) {
             logError(error);
@@ -841,7 +850,7 @@ program
  * All other commands are given a help message.
  */
 program
-  .command('*', { isDefault: true })
+  .command('*', {isDefault: true})
   .action((command) => {
     console.error(ERROR.COMMAND_DNE(command));
   });

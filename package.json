@@ -46,5 +46,8 @@
     "split-lines": "^1.1.0",
     "url": "^0.11.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint": "^4.16.0",
+    "eslint-config-google": "^0.9.1"
+  }
 }
